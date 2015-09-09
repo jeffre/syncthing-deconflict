@@ -12,8 +12,7 @@ function usage {
       "    more, then the conflict will overwrite the original."\
       ""\
       "OPTIONS"\
-      "    -i      interactive mode - requires keyboard interaction for "\
-      "                each file change"\
+      "    -i      require interaction before making each change"\
       "    -h      print usage (this)"\
       "    -d      deletes extraneous conflict files (when original file has"\
       "                greater than 0 words but the conflict has exactly 0)"\
