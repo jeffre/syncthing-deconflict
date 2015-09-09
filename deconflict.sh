@@ -12,11 +12,18 @@ function usage {
       "    more, then the conflict will overwrite the original."\
       ""\
       "OPTIONS"\
-      "    -i      interactive mode - requires interaction for each overwrite"\
+      "    -i      interactive mode - requires keyboard interaction for "\
+      "                each file change"\
       "    -h      print usage (this)"\
-      "    -d      deletes extraneous sync-conflict files - those that have "
-      "            0 words and  than their original"\
+      "    -d      deletes extraneous conflict files (when original file has"\
+      "                greater than 0 words but the conflict has exactly 0)"\
       ""
+}
+
+function maybe_wait {
+    if [[ "$INTERACTIVE" == "True" ]]; then
+        read input </dev/tty
+    fi
 }
 
 while getopts ":ihd" optchar; do
@@ -31,7 +38,7 @@ while getopts ":ihd" optchar; do
             ;;
         d)
             DELETE="True"
-            echo " * ENABLED delete extraneous sync-conflicts mode"
+            echo " * ENABLED delete extraneous conflicts mode"
             ;;
         ?)
             usage
@@ -78,11 +85,12 @@ find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' CON
         if [[ "$INTERACTIVE" == "True" ]]; then
               read input </dev/tty
         fi
+        maybe_wait
         rm "$ORIGINAL"
         mv "$CONFLICT" "$ORIGINAL"
     elif [[ "$DELETE" == "True" && $CONFLICT_WC == "0" && $ORIGINAL_WC -gt "0" ]]; then
-    #elif [[ "$DELETE" == "True" ]]; then
-        echo "Deleting $DELETE \"$CONFLICT\""
+        echo "Deleting $DELETE \"$CONFLICT\" ($CONFLICT_WC vs $ORIGINAL_WC)"
+        maybe_wait
         #rm "$CONFLICT"
     else
         echo "CONFLICT      $CONFLICT"
