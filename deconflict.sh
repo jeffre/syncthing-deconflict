@@ -17,11 +17,10 @@ function usage {
       ""
 }
 
-optspec=":ih"
-while getopts "$optspec" optchar; do
+while getopts ":ih" optchar; do
     case "${optspec}" in
         i)
-            INTERACTIVE=True
+            INTERACTIVE="True"
             echo "interactive mode enabled"
             ;;
         h)
@@ -33,7 +32,6 @@ while getopts "$optspec" optchar; do
             exit
             ;;
     esac
-    #echo "$OPTARG is $VARNAME"
 done
 
 # remove args processed by getopts
@@ -52,7 +50,6 @@ if [[ $# -eq 0 || ! -d $1 ]]; then
 fi
 
 
-
 find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' FILE; do
     # Path to expected original name (before conflict)
     BASE=$(echo $FILE | sed "s|\.sync-conflict-[0-9]*-[0-9]*||g")
@@ -68,7 +65,7 @@ find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' FIL
     if [[ $FILE_WC -gt $BASE_WC && $BASE_WC == "0" ]]; then
         # Restore the sync-conflict
         echo "Restoring \"$FILE\" ($FILE_WC vs $BASE_WC)"
-        if [[ "$2" == "-i" ]]; then
+        if [[ $INTERACTIVE=="True" ]]; then
               read input </dev/tty
         fi
         rm "$BASE"
