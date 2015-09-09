@@ -91,11 +91,6 @@ find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' CON
     elif [[ "$DELETE" == "True" && $CONFLICT_WC == "0" && $ORIGINAL_WC -gt "0" ]]; then
         echo "Deleting $DELETE \"$CONFLICT\" ($CONFLICT_WC vs $ORIGINAL_WC)"
         maybe_wait
-        #rm "$CONFLICT"
-    else
-        echo "CONFLICT      $CONFLICT"
-        echo "DELETE        $DELETE"
-        echo "CONFLICT_WC   $CONFLICT_WC"
-        echo "ORIGINAL_WC   $ORIGINAL_WC"
+        rm "$CONFLICT"
     fi
 done
