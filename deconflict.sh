@@ -4,16 +4,16 @@ set -e
 function usage {
     printf "%s\n" \
       "USAGE"\
-      "    ./fix.sh DIR"\
+      "    $0 DIR"\
       ""\
       "DESCRIPTION"\
       "    Finds *-sync-conflict-* files then compares the word count with"\
       "    original file. If the original file has 0 and sync-conflict has"\
-      "    more then the conflict will overwrite the original."\
+      "    more, then the conflict will overwrite the original."\
       ""\
       "OPTIONS"\
       "    -i      interactive mode - requires interaction for each overwrite"\
-      "    -h      print usage"\
+      "    -h      print usage (this)"\
       ""
 }
 
