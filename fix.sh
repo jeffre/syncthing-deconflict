@@ -17,7 +17,7 @@ function usage {
       ""
 }
 
-optspec=":ih:"
+optspec=":ih"
 while getopts "$optspec" optchar; do
     case "${optspec}" in
         i)
@@ -39,11 +39,18 @@ done
 # remove args processed by getopts
 shift $((OPTIND-1))
 
-# No args or arg isnt a dir
-if [[ $# -eq 0 || ! -d $1 ]]; then
+# No args
+if [[ $# -eq 0 ]]; then
     usage
     exit
 fi
+
+# Arg isnt a dir
+if [[ $# -eq 0 || ! -d $1 ]]; then
+    echo "\"$1\" is not a directory"
+    exit
+fi
+
 
 
 find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' FILE; do
