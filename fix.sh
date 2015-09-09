@@ -1,19 +1,52 @@
 #!/bin/bash
-
 set -e
-HOME="$1"
 
-function about {
-    echo "Scans a path that syncthing has mucked up and "
-    echo "deletes empty files that have a *sync-conflict*"
-    echo "counter-part that should replace them"
+function usage {
+    printf "%s\n" \
+      "USAGE"\
+      "    ./fix.sh DIR"\
+      ""\
+      "DESCRIPTION"\
+      "    Finds *-sync-conflict-* files then compares the word count with"\
+      "    original file. If the original file has 0 and sync-conflict has"\
+      "    more then the conflict will overwrite the original."\
+      ""\
+      "OPTIONS"\
+      "    -i      interactive mode - requires interaction for each overwrite"\
+      "    -h      print usage"\
+      ""
 }
 
-if [[ $# -ne 1 || ! -d $1 ]]; then
-  about
+optspec=":ih:"
+while getopts "$optspec" optchar; do
+    case "${optspec}" in
+        i)
+            INTERACTIVE=True
+            echo "interactive mode enabled"
+            ;;
+        h)
+            usage
+            exit
+            ;;
+        ?)
+            usage
+            exit
+            ;;
+    esac
+    #echo "$OPTARG is $VARNAME"
+done
+
+# remove args processed by getopts
+shift $((OPTIND-1))
+
+# No args or arg isnt a dir
+if [[ $# -eq 0 || ! -d $1 ]]; then
+    usage
+    exit
 fi
 
-find $HOME -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' FILE; do
+
+find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' FILE; do
     # Path to expected original name (before conflict)
     BASE=$(echo $FILE | sed "s|\.sync-conflict-[0-9]*-[0-9]*||g")
     if [[ ! -f $BASE ]]; then
@@ -28,8 +61,11 @@ find $HOME -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' 
     if [[ $FILE_WC -gt $BASE_WC && $BASE_WC == "0" ]]; then
         # Restore the sync-conflict
         echo "Restoring \"$FILE\" ($FILE_WC vs $BASE_WC)"
+        if [[ "$2" == "-i" ]]; then
+              read input </dev/tty
+        fi
         rm "$BASE"
         mv "$FILE" "$BASE"
-        #read input </dev/tty
+
     fi
 done
