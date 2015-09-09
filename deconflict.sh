@@ -14,18 +14,24 @@ function usage {
       "OPTIONS"\
       "    -i      interactive mode - requires interaction for each overwrite"\
       "    -h      print usage (this)"\
+      "    -d      deletes extraneous sync-conflict files - those that have "
+      "            0 words and  than their original"\
       ""
 }
 
-while getopts ":ih" optchar; do
-    case "${optspec}" in
+while getopts ":ihd" optchar; do
+    case "${optchar}" in
         i)
             INTERACTIVE="True"
-            echo "interactive mode enabled"
+            echo " * ENABLED interactive mode"
             ;;
         h)
             usage
             exit
+            ;;
+        d)
+            DELETE="True"
+            echo " * ENABLED delete extraneous sync-conflicts mode"
             ;;
         ?)
             usage
@@ -44,32 +50,44 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Arg isnt a dir
-if [[ $# -eq 0 || ! -d $1 ]]; then
+if [[ ! -d "$1" ]]; then
     echo "\"$1\" is not a directory"
     exit
 fi
 
 
-find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' FILE; do
+find $1 -iname "*sync-conflict*" -print0 | while IFS= read -d '' -r -d $'\0' CONFLICT; do
     # Path to expected original name (before conflict)
-    BASE=$(echo $FILE | sed "s|\.sync-conflict-[0-9]*-[0-9]*||g")
-    if [[ ! -f $BASE ]]; then
-        echo "\"$BASE\" not found "
+    ORIGINAL=$(echo "$CONFLICT" | sed "s|\.sync-conflict-[0-9]*-[0-9]*||g")
+    if [[ ! -f "$ORIGINAL" ]]; then
+        echo "\"$ORIGINAL\" not found "
         continue
     fi
 
-    # Compare which has the greater word cound
-    # Require current file to have 0 words
-    BASE_WC=$(wc -w < "$BASE")
-    FILE_WC=$(wc -w < "$FILE")
-    if [[ $FILE_WC -gt $BASE_WC && $BASE_WC == "0" ]]; then
+    # Get word counts
+    ORIGINAL_WC=$(wc -w < "$ORIGINAL")
+    CONFLICT_WC=$(wc -w < "$CONFLICT")
+
+    # If ORIGINAL file is empty but CONFLICT isn't then restore it.
+    # If -d flag is invoked and CONFLICT has 0 words and ORIGINAL has more 
+    #    than 0 then delete CONFLICT
+    #  Require current file to have 0 words
+    if [[ $CONFLICT_WC -gt "0"  && $ORIGINAL_WC == "0" ]]; then
         # Restore the sync-conflict
-        echo "Restoring \"$FILE\" ($FILE_WC vs $BASE_WC)"
-        if [[ $INTERACTIVE=="True" ]]; then
+        echo "Restoring \"$CONFLICT\" ($CONFLICT_WC vs $ORIGINAL_WC)"
+        if [[ "$INTERACTIVE" == "True" ]]; then
               read input </dev/tty
         fi
-        rm "$BASE"
-        mv "$FILE" "$BASE"
-
+        rm "$ORIGINAL"
+        mv "$CONFLICT" "$ORIGINAL"
+    elif [[ "$DELETE" == "True" && $CONFLICT_WC == "0" && $ORIGINAL_WC -gt "0" ]]; then
+    #elif [[ "$DELETE" == "True" ]]; then
+        echo "Deleting $DELETE \"$CONFLICT\""
+        #rm "$CONFLICT"
+    else
+        echo "CONFLICT      $CONFLICT"
+        echo "DELETE        $DELETE"
+        echo "CONFLICT_WC   $CONFLICT_WC"
+        echo "ORIGINAL_WC   $ORIGINAL_WC"
     fi
 done
